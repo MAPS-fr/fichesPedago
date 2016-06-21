@@ -84,13 +84,13 @@ to setupVT
       set rente 0 
       set pcolor black
       set cityMarket one-of cities
-    ][
+      ][
       set culture item indMax culturesList
       set cityMarket cityChosen
       set rente renteMax
       set pcolor item indMax colorlist
-    ]
-    set nextCulture culture]]
+      ]
+     set nextCulture culture]]
 end
 
 
@@ -99,8 +99,7 @@ to build-agriculteurs
   ask patches [ ; chaque patch se cree un agriculteur
     if count cities-here = 0 [
       init_agriculteur_on_me
-    ]
-  ]
+    ]]
 end
 
 
@@ -115,44 +114,41 @@ to init_agriculteur_on_me
   ; création de l'agriculteur
   sprout-agriculteurs 1 [
 
-    set size 0.9
-    set shape "circle"
-    set color black 
-    move-to myself 
+   set size 0.9
+   set shape "circle"
+   set color black 
+   move-to myself 
 
-    ; creation de l'exploitation
-    set monExploitation myself    
-    ask myself [set proprietaire self]
+   ; creation de l'exploitation
+   set monExploitation myself    
+   ask myself [set proprietaire self]
 
-    ; si comportement diversifies, tirage du comportement de l'agriculteur, sinon comportement = VT 
-    ifelse (comportementAgriculteurs = "diversifiés") and (sum (list optimisateursVT sous-optimisateurs aversesRisque obsIntelligents earlyAdopters followers resistants) > 0) [
-      ;; Proposition de chaque type d'agent à partir des paramètres du modèle
-      let listProps (list optimisateursVT sous-optimisateurs aversesRisque obsIntelligents earlyAdopters followers resistants)
-      let listRefs (list "VT"  "SO" "AR" "OI" "EA" "F" "R") 
-      let listShapes (list "star" "x" "triangle" "circle 2" "square 2" "dot" "line")
-      set typeComportement tirageSelonDistributionDans listProps listRefs
-      set shape item (position typeComportement listRefs) listShapes
-    ][
-      set typeComportement "VT"
-    ]
-  ]
+  ; si comportement diversifies, tirage du comportement de l'agriculteur, sinon comportement = VT 
+  ifelse comportementAgriculteurs = "diversifiés" [
+    let listProps (list optimisateursVT sous-optimisateurs aversesRisque obsIntelligents earlyAdopters followers resistants)
+    let listRefs (list "VT"  "SO" "AR" "OI" "EA" "F" "R") 
+    let listShapes (list "star" "x" "triangle" "circle 2" "square 2" "dot" "line")
+    set typeComportement tirageSelonDistributionDans listProps listRefs
+    set shape item (position typeComportement listRefs) listShapes
+  ][set typeComportement "VT"]
+ ]
  
-  ; initialisation du type de culture : tirage 
-  let listProps n-values NombreProduits [1]; tirage equiprobable
-  let listIndex n-values NombreProduits [?]
-  set typeCulture tirageSelonDistributionDans listProps listIndex 
+ ; initialisation du type de culture : tirage 
+ let listProps n-values NombreProduits [1]; tirage equiprobable
+ let listIndex n-values NombreProduits [?]
+ set typeCulture tirageSelonDistributionDans listProps listIndex 
 
-  ; mise en place de la culture sur le patch 
-  set culture item typeCulture culturesList
-  set chgtCulture (- random 50) - 1 ; initialisation à nbr negatif aleatoire pour que les chgts soient echelonnés si inertie 
-  set nextCulture culture
-  set pcolor item typeCulture colorList  
+ ; mise en place de la culture sur le patch 
+ set culture item typeCulture culturesList
+ set chgtCulture (- random 50) - 1 ; initialisation à nbr negatif aleatoire pour que les chgts soient echelonnés si inertie 
+ set nextCulture culture
+ set pcolor item typeCulture colorList  
 
-  ; attribution du marché 
-  set cityMarket one-of cities
-  ask cityMarket [ set renteCurrent calculerRenteReportCity typeCulture]
-  set rente renteCurrent
-  set nextCity cityMarket
+ ; attribution du marché 
+ set cityMarket one-of cities
+ ask cityMarket [ set renteCurrent calculerRenteReportCity typeCulture]
+ set rente renteCurrent
+ set nextCity cityMarket
 end
 
 
@@ -197,6 +193,9 @@ end
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 to go
+
+  
+
   ; rafraichissement des listes
   update-lists
   
@@ -206,19 +205,23 @@ to go
     if rand < probaMort [ ; mourir revient a changer de culture aleatoirement, un autre agent vient 
       ask patch-here [init_agriculteur_on_me]
       die
-    ]
-  ]
+       ]]
   
   ; evolution des cultures des agriculteurs 
   ; choix d'une nouvelle culture 
   ask agriculteurs [choisirCulture]
   ; installation de la nouvelle culture
   ask agriculteurs [installerNextCulture]
+
+  
+  ; creation de villes à la volée
+  if mouse-down? [
+    user-message "mouse-down!"]
   
   ; evolution des marches
-  ask cities [
-    update-market
-  ]
+    ask cities [
+      update-market
+    ]
   
   ; update plots et temsp
   do-plots
@@ -259,29 +262,24 @@ to choisirCulture
   let indMax 0 
   let cultureMax culture 
 
-  ;;;;;;;; Comportement VT
-  ; maximisateurs de la rente au sens de VT
-  if typeComportement = "VT" [ 
-    ask monExploitation [
-      let combiOptimale calculerCultureEtVilleVT
-      set renteMax item 0 combiOptimale
-      set indMax item 1 combiOptimale
-      set cityChosen item 2 combiOptimale 
-      ifelse(renteMax <= 0) [
-        set nextCulture 0
-        set nextCity one-of cities][
-      set nextCulture item indMax culturesList
-      set nextCity cityChosen]
-    ]
-  ] 
-
-  ; il n'y a choix de culture que si la phase d'inertie est terminée
-  ; cela inclut la banqueroute
   if (ticks - chgtCulture) > (inertie ) [ 
 
-    ;;;;;;;; Comportement SO
-    ; tirage d'une culture pondéré par sa rente parmi cultures à rente > 0     
-    if typeComportement = "SO" [
+    ; il n'y a choix de culture que si la phase d'inertie est terminée
+    ; cela inclut la banqueroute
+    if typeComportement = "VT" [; maximisateurs de la rente au sens de VT 
+      ask monExploitation [
+        let combiOptimale calculerCultureEtVilleVT
+        set renteMax item 0 combiOptimale
+        set indMax item 1 combiOptimale
+        set cityChosen item 2 combiOptimale 
+        ifelse(renteMax <= 0) [
+          set nextCulture 0
+          set nextCity one-of cities][
+        set nextCulture item indMax culturesList
+        set nextCity cityChosen]
+      ]]
+    
+    if typeComportement = "SO" [; tirage d'une culture pondéré par sa rente parmi cultures à rente > 0 
       ;;; ATTENTION NE MARCHE BIEN QUE POUR UN SEUL MARCHE, IL NE CHERCHE JAMAIS A CHANGER DE MARCHE...
       let rentes n-values nombreProduits [0]
       ask cityMarket [set rentes map [calculerRenteReportCity ?] (n-values nombreProduits [?])]
@@ -290,22 +288,26 @@ to choisirCulture
         let positivesRentes filter [? >= 0] rentes 
         let indNext tirageSelonDistributionDans positivesRentes positiveIndexes
         set nextCulture item indNext culturesList        
-      ][ 
-        ; il n'existe pas de culture à rente  > 0 : friche
-        set nextCulture 0
-        set nextCity one-of cities      
+      ][ ; il n'existe pas de culture à rente  > 0 : friche
+          set nextCulture 0
+          set nextCity one-of cities      
       ] 
     ]
-
-    ;;;;;;;; Comportement AR    
-    ; tirage d'une culture pondéré par son cout de production parmi cultures à rente > 0 
-    if typeComportement = "AR" [
-      ;let invCoutProds map [1 / ?]  coutProdList
+    
+    
+    if typeComportement = "AR" [; tirage d'une culture pondéré par son cout de production parmi cultures à rente > 0 
+      let invCoutProds map [1 / ?]  coutProdList
+; show invCoutProds      
       let rentes n-values nombreProduits [0]      
       ask cityMarket [set rentes map [calculerRenteReportCity ?] (n-values nombreProduits [?])]
+; show rentes      
       ifelse length filter [? >= 0] rentes > 0 [ ; il existe au moins une culture à rente > 0 : tirage
         let positiveIndexes filter [item ? rentes >= 0] (n-values nombreProduits [?])
-        let positivesCoutsProd map [item ? coutProdList] positiveIndexes
+; show positiveIndexes       
+; show rentes
+; show  invCoutProds
+        let positivesCoutsProd filter [item ? rentes >= 0] invCoutProds 
+; show positivesCoutsProd        
         let indNext tirageSelonDistributionDans positivesCoutsProd positiveIndexes
         set nextCulture item indNext culturesList        
       ][ ; il n'existe pas de culture à rente  > 0 : friche
@@ -314,9 +316,8 @@ to choisirCulture
       ] 
     ]
     
-    ;;;;;;;; Comportement OI    
-    ; les OI regardent autour d'eux et prennent la culture max si superieure a leur rente    
-    if typeComportement = "OI" [
+        
+    if typeComportement = "OI" [; les OI regardent autour d'eux et prennent la culture max si superieure a leur rente
       set patchMax max-one-of neighbors [rente]
       if [rente] of patchMax > rente [ ; si ils sont en negatif et que autour d'eux le mieux est de ne rien faire alors ils ne font rien ! 
         set nextCulture [culture] of patchMax
@@ -324,9 +325,9 @@ to choisirCulture
       ] 
     ]
     
-    ;;;;;;;; Comportement EA
-    ; les EA regardent si il y a une nouvelle culture autour d'eux et l'adoptent - random si il y en a plusieurs 
-    if typeComportement = "EA" [
+
+
+    if typeComportement = "EA" [; les EA regardent si il y a une nouvelle culture autour d'eux et l'adoptent - random si il y en a plusieurs 
       set patchMax one-of neighbors with [(chgtCulture > 0) and ((ticks - chgtCulture) <= inertie + 1)]
       if not (patchMax = nobody) [
         set nextCulture [culture] of patchMax
@@ -334,9 +335,7 @@ to choisirCulture
       ]
     ]
     
-    ;;;;;;;; Comportement F
-    ; les F regardent si une culture est majoritaire autour d'eux
-    if typeComportement = "F" [
+    if typeComportement = "F" [; les F regardent si une culture est majoritaire autour d'eux
       foreach culturesList [
         set indMax count neighbors with [culture = ?]
         if indMax >= 4 [
@@ -346,9 +345,7 @@ to choisirCulture
       ]
     ]
     
-    ;;;;;;;; Comportement R
-    ; les R ne changent que si tout le monde autour d'eux a une meme culture
-    if typeComportement = "R" [ 
+    if typeComportement = "R" [ ; les R ne changent que si tout le monde autour d'eux a une meme culture
       foreach culturesList [
         set indMax count neighbors with [culture = ?]
         if indMax = 8 [
@@ -371,8 +368,8 @@ end
 ; methode de agriculteur
 ; installe la culture choisie et met à jour les quantités de cultures sur les marchés
 to installerNextCulture
-  ; installe culture planifiée sur la parcelle  
-  if not (nextCulture = culture) [set chgtCulture ticks]   ; le flag chgtCulture est mis à true si la culture change
+  ; installe culture planifi�e sur la parcelle  
+  if not (nextCulture = culture) [set chgtCulture ticks]   ; le flag chgtCulture est mis � true si la culture change
   set culture nextCulture
   set cityMarket nextCity
   let cultureIndex position culture cultureslist 
@@ -403,20 +400,20 @@ end
 ; methode de city
 ; evolution des prix du marché en fonction de l'offre et de la demande
 to update-market
-  ifelse prixFixe [
-    set prixCourantI item 0 prixMarcheList
-    set prixCourantF item 1 prixMarcheList
-    set prixCourantC item 2 prixMarcheList
-    set prixCourantR item 3 prixMarcheList  
-  ][
-    ; attention onne peut pas avoir de prix negatif ni même nul
-    set prixCourantI max list 0.001  (prixCourantI + (demandeCourantI - (item 0 qteCourante)) * tauxDecroissance)
-    set prixCourantF max list 0.001 (prixCourantF + (demandeCourantF - (item 1 qteCourante)) * tauxDecroissance)
-    set prixCourantC max list 0.001 (prixCourantC + (demandeCourantC - (item 2 qteCourante)) * tauxDecroissance)
-    set prixCourantR max list 0.001 (prixCourantR + (demandeCourantR - (item 3 qteCourante)) * tauxDecroissance)
-  ]
+    ifelse prixFixe [
+      set prixCourantI item 0 prixMarcheList
+      set prixCourantF item 1 prixMarcheList
+      set prixCourantC item 2 prixMarcheList
+      set prixCourantR item 3 prixMarcheList  
+      ]
+    [; attention onne peut pas avoir de prix negatif ni même nul
+      set prixCourantI max list 0.001  (prixCourantI + (demandeCourantI - (item 0 qteCourante)) * tauxDecroissance)
+      set prixCourantF max list 0.001 (prixCourantF + (demandeCourantF - (item 1 qteCourante)) * tauxDecroissance)
+      set prixCourantC max list 0.001 (prixCourantC + (demandeCourantC - (item 2 qteCourante)) * tauxDecroissance)
+      set prixCourantR max list 0.001 (prixCourantR + (demandeCourantR - (item 3 qteCourante)) * tauxDecroissance)
+    ]
 
-  set qteCourante [0 0 0 0]
+ set qteCourante [0 0 0 0]
 
 end
 
@@ -439,14 +436,24 @@ to-report tirageSelonDistributionDans [listProps listRefs]
   let result -1 
   let rand random-float 1
   let sumProps 0  
-  foreach n-values length listPropsUnif [?] [
+  foreach n-values length listPropsUnif [?][
     if result < 0 [
       if rand < sumProps + item ? listPropsUnif [set result ?]
       set sumProps sumProps + item ? listPropsUnif
      ]
   ]
+;  if result = -1 [
+;   show "-----------------------"
+;    show listPropsUnif
+;    show listProps
+;    show listRefs
+;    show rand]
+  ifelse result < 0 [
+      report item 0 listRefs 
+    ][
+      report item result listRefs 
+    ]
 
-  report item result listRefs 
 end
 
 
@@ -455,20 +462,26 @@ end
 ; calcule la rente de la culture indexée pour la city appelant et le patch appelant (myself)
 to-report calculerRenteReportCity [index]
     
-  ifelse( index = 0) [
-    report  RendementI * (- transportI * distance myself + ( prixCourantI - coutProdI) )  
-  ][
-    ifelse (index = 1) [
-      report  RendementF * (- transportF * distance myself + ( prixCourantF - coutProdF) )  
-    ][
-      ifelse (index = 2) [
-        report RendementC * (- transportC * distance myself + ( prixCourantC - coutProdC) )  
-      ][
-        ifelse (index = 3) [
-          report RendementR * (- transportR * distance myself + ( prixCourantR - coutProdR) )  
-        ][
-          report 0
+ifelse( index = 0)
+[
+  report  RendementI * (- transportI * distance myself + ( prixCourantI - coutProdI) )  
+  ]
+[
+  ifelse (index = 1)
+  [
+    report  RendementF * (- transportF * distance myself + ( prixCourantF - coutProdF) )  
+    ]
+  [
+    ifelse (index = 2)
+    [
+      report RendementC * (- transportC * distance myself + ( prixCourantC - coutProdC) )  
+      ]
+    [
+      ifelse (index = 3)
+      [
+        report RendementR * (- transportR * distance myself + ( prixCourantR - coutProdR) )  
         ]
+      [report 0]
       ]
     ]
   ]
@@ -482,24 +495,30 @@ end
 ; renvoie une liste (indice rente max - culture max - ville max)
 to-report calculerCultureEtVilleVT
 
-  let renteMax 0
-  let renteTemp 0 
-  let indMax 0 
-  let cityChosen one-of cities
+let renteMax 0
+let renteTemp 0 
+let indMax 0 
+let cityChosen one-of cities
 
-  ; calcule la rente pour chaque combinaison culture-ville et choisit la maximale ! 
-  foreach n-values nombreProduits [?] [
-    ask cities [
-      set renteTemp calculerRenteReportCity ?          
-      if (renteTemp > renteMax) [
-        set renteMax renteTemp
-        set indMax ? 
-        set cityChosen self
+; calcule la rente pour chaque combinaison culture-ville et choisit la maximale ! 
+  foreach n-values nombreProduits [?] 
+   [
+      ask cities 
+      [
+        set renteTemp calculerRenteReportCity ?          
+        if (renteTemp > renteMax) [
+          set renteMax renteTemp
+          set indMax ? 
+          set cityChosen self
+          ]
       ]
-    ]
-  ]
-  report (list renteMax indMax cityChosen)
+   ]
+   report (list renteMax indMax cityChosen)
 end
+
+
+
+
 
 
 
@@ -566,13 +585,13 @@ to refresh
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
-280
+230
 10
-667
-418
+645
+446
 40
 40
-4.654321
+5.0
 1
 10
 1
@@ -593,10 +612,10 @@ ticks
 30.0
 
 BUTTON
-93
-68
-176
-101
+73
+70
+136
+103
 NIL
 go
 T
@@ -610,7 +629,7 @@ NIL
 1
 
 BUTTON
-7
+6
 34
 104
 67
@@ -627,10 +646,10 @@ NIL
 1
 
 SLIDER
-681
-38
-799
-71
+664
+44
+768
+77
 coutProdI
 coutProdI
 0
@@ -642,10 +661,10 @@ NIL
 HORIZONTAL
 
 SLIDER
-681
-71
-799
-104
+664
+77
+767
+110
 coutProdF
 coutProdF
 0
@@ -657,10 +676,10 @@ NIL
 HORIZONTAL
 
 SLIDER
-681
-103
-799
-136
+664
+109
+767
+142
 coutProdC
 coutProdC
 0
@@ -672,10 +691,10 @@ NIL
 HORIZONTAL
 
 SLIDER
-681
-136
-799
-169
+664
+142
+767
+175
 coutProdR
 coutProdR
 0
@@ -687,10 +706,10 @@ NIL
 HORIZONTAL
 
 SLIDER
-681
-175
-799
-208
+664
+181
+767
+214
 prixMarcheI
 prixMarcheI
 0
@@ -702,25 +721,25 @@ NIL
 HORIZONTAL
 
 SLIDER
-681
-207
-799
-240
+664
+213
+767
+246
 prixMarcheF
 prixMarcheF
 0
 1000
-761
+705
 1
 1
 NIL
 HORIZONTAL
 
 SLIDER
-681
-240
-799
-273
+664
+246
+767
+279
 prixMarcheC
 prixMarcheC
 0
@@ -732,10 +751,10 @@ NIL
 HORIZONTAL
 
 SLIDER
-681
-273
-799
-306
+664
+279
+766
+312
 prixMarcheR
 prixMarcheR
 0
@@ -747,25 +766,25 @@ NIL
 HORIZONTAL
 
 SLIDER
-805
-38
-915
-71
+776
+42
+882
+75
 TransportI
 TransportI
 0
 100
-42
+38
 1
 1
 NIL
 HORIZONTAL
 
 SLIDER
-805
-71
-915
-104
+776
+75
+880
+108
 TransportF
 TransportF
 0
@@ -777,10 +796,10 @@ NIL
 HORIZONTAL
 
 SLIDER
-805
-104
-915
-137
+776
+108
+879
+141
 TransportC
 TransportC
 0
@@ -792,10 +811,10 @@ NIL
 HORIZONTAL
 
 SLIDER
-805
-137
-915
-170
+776
+141
+878
+174
 TransportR
 TransportR
 0
@@ -807,10 +826,10 @@ NIL
 HORIZONTAL
 
 SLIDER
-805
-175
-915
-208
+776
+180
+879
+213
 RendementI
 RendementI
 0
@@ -822,10 +841,10 @@ NIL
 HORIZONTAL
 
 SLIDER
-805
-208
-915
-241
+776
+213
+880
+246
 RendementF
 RendementF
 0
@@ -837,10 +856,10 @@ NIL
 HORIZONTAL
 
 SLIDER
-805
-241
-915
-274
+776
+247
+879
+280
 RendementC
 RendementC
 0
@@ -852,10 +871,10 @@ NIL
 HORIZONTAL
 
 SLIDER
-805
-274
-915
-307
+776
+279
+878
+312
 RendementR
 RendementR
 0
@@ -867,10 +886,10 @@ NIL
 HORIZONTAL
 
 SLIDER
-683
-414
-834
-447
+924
+88
+1066
+121
 demandeI
 demandeI
 0
@@ -882,10 +901,10 @@ NIL
 HORIZONTAL
 
 SLIDER
-683
-447
-834
-480
+924
+121
+1065
+154
 demandeF
 demandeF
 0
@@ -897,10 +916,10 @@ NIL
 HORIZONTAL
 
 SLIDER
-683
-480
-834
-513
+924
+154
+1066
+187
 demandeC
 demandeC
 0
@@ -912,10 +931,10 @@ NIL
 HORIZONTAL
 
 SLIDER
-683
-513
-834
-546
+924
+188
+1067
+221
 demandeR
 demandeR
 0
@@ -927,10 +946,10 @@ NIL
 HORIZONTAL
 
 PLOT
-280
-420
-668
-628
+226
+447
+641
+655
 Rente des cultures selon la distance à la ville
 distance
 Rente
@@ -948,10 +967,10 @@ PENS
 "F" 1.0 0 -16777216 true "" ""
 
 PLOT
-934
-290
-1230
-468
+1094
+291
+1390
+469
 Cultures
 temps
 % total cultures
@@ -969,10 +988,10 @@ PENS
 "F" 1.0 0 -16777216 true "" ""
 
 PLOT
-934
-10
-1231
-171
+1094
+11
+1391
+172
 Prix
 temps
 prix
@@ -990,30 +1009,30 @@ PENS
 "F" 1.0 0 -16777216 true "" ""
 
 TEXTBOX
-12
-236
-184
-264
-LIMITATION DU NOMBRE DE CULTURES
+9
+223
+181
+251
+LIMITATION DU NB DE CULTURES
 11
 0.0
 1
 
 CHOOSER
-7
-138
-204
-183
+8
+129
+190
+174
 comportementAgriculteurs
 comportementAgriculteurs
 "vonThunen" "diversifiés"
-0
+1
 
 SLIDER
-8
-344
-274
-377
+666
+354
+699
+493
 optimisateursVT
 optimisateursVT
 0
@@ -1022,13 +1041,13 @@ optimisateursVT
 1
 1
 NIL
-HORIZONTAL
+VERTICAL
 
 SLIDER
-157
-378
-274
-411
+781
+390
+886
+423
 earlyAdopters
 earlyAdopters
 0
@@ -1040,10 +1059,10 @@ NIL
 HORIZONTAL
 
 SLIDER
-157
-412
-274
-445
+781
+425
+886
+458
 followers
 followers
 0
@@ -1056,9 +1075,9 @@ HORIZONTAL
 
 BUTTON
 7
-68
-92
-101
+69
+70
+102
 NIL
 go
 NIL
@@ -1072,24 +1091,24 @@ NIL
 1
 
 SLIDER
-8
-412
-156
-445
+781
+357
+886
+390
 obsIntelligents
 obsIntelligents
 0
 100
-10
+0
 1
 1
 NIL
 HORIZONTAL
 
 BUTTON
-105
+107
 34
-176
+178
 67
 Init VT 
 setupVT
@@ -1104,36 +1123,36 @@ NIL
 1
 
 SLIDER
-14
-541
-132
-574
+673
+530
+784
+563
 probaMort
 probaMort
 0
 1
-0.1
+0
 0.01
 1
 NIL
 HORIZONTAL
 
 SWITCH
-14
-575
-132
-608
+673
+564
+785
+597
 Banqueroute
 Banqueroute
-1
+0
 1
 -1000
 
 SLIDER
-10
-267
-180
-300
+7
+241
+115
+274
 NombreProduits
 NombreProduits
 1
@@ -1145,14 +1164,14 @@ NIL
 HORIZONTAL
 
 SLIDER
-103
-184
-204
-217
+98
+176
+190
+209
 NombreVilles
 NombreVilles
 1
-9
+10
 1
 1
 1
@@ -1160,10 +1179,10 @@ NIL
 HORIZONTAL
 
 SWITCH
-7
-184
-101
-217
+8
+176
+98
+209
 prixFixe
 prixFixe
 0
@@ -1181,20 +1200,20 @@ INITIALISATION / RUN
 1
 
 TEXTBOX
-9
-120
-182
-148
+10
+112
+183
+140
 EXTENSIONS DU MODELE DE VT
 11
 0.0
 1
 
 BUTTON
-542
-490
-635
-523
+518
+510
+611
+543
 Rafraichir
 do-plots
 NIL
@@ -1208,50 +1227,50 @@ NIL
 1
 
 CHOOSER
-542
-443
-634
-488
+519
+465
+611
+510
 initialOuCourant
 initialOuCourant
 "initial" "courant"
 1
 
 TEXTBOX
-12
-323
-236
-351
+671
+336
+895
+364
 STRUCTURE POPULATION AGRICULTEURS 
 11
 0.0
 1
 
 TEXTBOX
-734
-18
-884
-36
+713
+20
+863
+38
 PARAMETRES VT CULTURES
 11
 0.0
 1
 
 TEXTBOX
-690
-335
-840
-367
+924
+21
+1074
+39
 PARAMETRES PRIX VARIABLES
 11
 0.0
 1
 
 SLIDER
-682
-368
-833
-401
+923
+42
+1066
+75
 tauxDecroissance
 tauxDecroissance
 0
@@ -1263,20 +1282,20 @@ NIL
 HORIZONTAL
 
 TEXTBOX
-16
-507
-240
-535
+675
+511
+899
+539
 PARAMETRES ADAPTATION AGRICULTEURS
 11
 0.0
 1
 
 SLIDER
-157
-446
-274
-479
+781
+459
+886
+492
 resistants
 resistants
 0
@@ -1288,25 +1307,25 @@ NIL
 HORIZONTAL
 
 SLIDER
-8
-378
-156
-411
+742
+354
+775
+493
 aversesRisque
 aversesRisque
 0
 100
-0
+10
 1
 1
 NIL
-HORIZONTAL
+VERTICAL
 
 INPUTBOX
-134
-541
-184
-608
+788
+531
+838
+597
 inertie
 10
 1
@@ -1314,10 +1333,10 @@ inertie
 Number
 
 SLIDER
-8
-446
-156
-479
+704
+354
+737
+494
 sous-optimisateurs
 sous-optimisateurs
 0
@@ -1326,13 +1345,13 @@ sous-optimisateurs
 1
 1
 NIL
-HORIZONTAL
+VERTICAL
 
 PLOT
-934
-467
-1230
-639
+1092
+468
+1390
+660
 Comportements
 temps
 % total cultures
@@ -1353,10 +1372,10 @@ PENS
 "R" 1.0 0 -10899396 true "" "ifelse count agriculteurs with [culture != 0] = 0 [plot 0 ][plot 100 * (count agriculteurs with [culture != 0 and typeComportement = \"R\"]) / count agriculteurs with [culture != 0]]"
 
 PLOT
-934
-171
-1231
-291
+1094
+172
+1391
+292
 Nombre total de cultures
 NIL
 NIL
